@@ -1,10 +1,14 @@
 package com.example.timekeeper
 
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
@@ -132,24 +136,35 @@ fun main() {
             }
 
             TimeKeeperTheme(mode = state.themeMode) {
-                val detailFor = state.detailFor
-                if (detailFor != null) {
-                    DetailScreen(
-                        detail = state.detail,
-                        range = state.range,
-                        rangeLabel = state.range.rangeLabel(),
-                        icon = vm.iconFor(detailFor),
-                        onClose = vm::closeDetail,
-                    )
-                } else {
-                    UsageScreen(
-                        state = state,
-                        onSelectRange = vm::selectRange,
-                        onOpenDetail = vm::openDetail,
-                        onSetGoal = vm::setGoal,
-                        onSetThemeMode = vm::setThemeMode,
-                        iconLoader = vm::iconFor,
-                    )
+                // Paint the window's root with the theme's background. A desktop
+                // window defaults to white, so without this the scheme's colors
+                // changed but the backdrop stayed light — dark mode looked broken.
+                // Surface (not a bare Box) also supplies the matching content
+                // color, so text with no explicit color follows the theme instead
+                // of falling back to black.
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background,
+                ) {
+                    val detailFor = state.detailFor
+                    if (detailFor != null) {
+                        DetailScreen(
+                            detail = state.detail,
+                            range = state.range,
+                            rangeLabel = state.range.rangeLabel(),
+                            icon = vm.iconFor(detailFor),
+                            onClose = vm::closeDetail,
+                        )
+                    } else {
+                        UsageScreen(
+                            state = state,
+                            onSelectRange = vm::selectRange,
+                            onOpenDetail = vm::openDetail,
+                            onSetGoal = vm::setGoal,
+                            onSetThemeMode = vm::setThemeMode,
+                            iconLoader = vm::iconFor,
+                        )
+                    }
                 }
             }
         }
