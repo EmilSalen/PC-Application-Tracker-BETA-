@@ -31,9 +31,16 @@ compose.desktop {
         nativeDistributions {
             targetFormats(TargetFormat.Msi, TargetFormat.Exe)
             packageName = "TimeKeeper"
-            packageVersion = "1.0.0"
+            packageVersion = "1.0.1"
             description = "PC screen-time tracker"
             vendor = "Emil Joy Salen"
+
+            // The JDK packs only the modules it can see statically referenced.
+            // sqlite-jdbc loads java.sql.DriverManager by name at runtime, so the
+            // analyzer misses it and the app dies with "NoClassDefFoundError:
+            // java/sql/DriverManager" the moment it opens the database. Naming the
+            // module here forces it into the bundled runtime.
+            modules("java.sql")
             windows {
                 menu = true
                 shortcut = true
