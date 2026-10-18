@@ -16,9 +16,10 @@ import java.time.ZoneId
  *
  * Android hands us a finished per-day usage table; Windows doesn't, so we build
  * our own: every [POLL_MILLIS] we note which program owns the foreground window
- * and credit that program with the time since the previous sample. While the
- * machine is idle (no input for [IDLE_THRESHOLD_MILLIS]) nothing is credited, so
- * a laptop left open on a page doesn't pile up fake hours.
+ * and credit that program with the time since the previous sample. Whatever holds
+ * focus is credited for as long as it holds it — a video or music tab is still in
+ * use with your hands off the keyboard — so the clock only stops when no window
+ * is focused, or the machine was asleep between samples.
  *
  * Each credit is written with two totals — an all-day one and an hour bucket —
  * which between them feed every range on the main screen and the "by hour" chart.
@@ -51,9 +52,15 @@ class UsageTracker(private val store: UsageStore) {
 
     private fun sample() {
         val now = System.currentTimeMillis()
-        val elapsed = now - lastSampleAt
+        var elapsed = now - lastSampleAt
         lastSampleAt = now
         if (elapsed <= 0) return
+
+        // A sample gap far larger than the poll interval means the machine slept
+        // or the process was frozen mid-window. The foreground app at wake says
+        // nothing about the whole gap, so credit only one ordinary poll of it
+        // rather than banking hours of unattended time.
+        if (elapsed > MAX_SAMPLE_MILLIS) elapsed = POLL_MILLIS
 
         val id = foregroundId() ?: return
 
@@ -79,11 +86,10 @@ class UsageTracker(private val store: UsageStore) {
 
     /**
      * The executable to credit for the time just elapsed, or null to credit
-     * nobody. Null while idle or while our own window is in front — looking at
-     * the tracker is not something to track.
+     * nobody. Null when no window is focused or when our own window is in front —
+     * looking at the tracker is not something to track.
      */
     private fun foregroundId(): String? {
-        if (Win32.idleMillis() >= IDLE_THRESHOLD_MILLIS) return null
         val raw = Win32.foregroundProcessPath() ?: return null
         val path = normalizePath(raw.trim())
         if (path.isEmpty()) return null
@@ -96,7 +102,11 @@ class UsageTracker(private val store: UsageStore) {
         /** How often we sample the foreground window. */
         const val POLL_MILLIS = 5_000L
 
-        /** No keyboard/mouse input for this long → stop counting. */
-        const val IDLE_THRESHOLD_MILLIS = 120_000L
+        /**
+         * A gap longer than this between samples means the machine was asleep or
+         * the process was suspended, not that the foreground app was used the
+         * whole time. Such a gap is credited as a single poll instead.
+         */
+        const val MAX_SAMPLE_MILLIS = 90_000L
     }
 }
