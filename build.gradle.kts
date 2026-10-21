@@ -31,7 +31,7 @@ compose.desktop {
         nativeDistributions {
             targetFormats(TargetFormat.Msi, TargetFormat.Exe)
             packageName = "TimeKeeper"
-            packageVersion = "1.0.2"
+            packageVersion = "1.0.3"
             description = "PC screen-time tracker"
             vendor = "Emil Joy Salen"
 

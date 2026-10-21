@@ -70,6 +70,11 @@ fun main() {
         settings.putString(KEY_STARTUP_PROMPTED, "1")
     }
 
+    // Keep the sign-in entry aimed at this executable. It's written once and then
+    // left alone, so an update that lands in a new folder would otherwise leave
+    // sign-in launching the previous build from the old path indefinitely.
+    if (isPackagedLaunch()) StartupManager.refresh()
+
     val goalMonitor = GoalMonitor(repo, settings) { used, goal ->
         TrayController.showBalloon(
             "Daily screen-time goal reached",
